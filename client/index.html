@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap" rel="stylesheet">
+    <style>
+        /* Base reset */
+        * {
+            box-sizing: border-box;
+            font-family: 'Sora', sans-serif;
+        }
+
+        body {
+            background-color: #ffff; 
+            background-image: url("./background.svg");
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f1724;
+            padding-bottom: 72px; /* leave room for bottom marquee */
+        }
+
+        /* Right-side hero card (blue rounded box) */
+        .hero-right {
+            margin-left: auto; /* push it to the right of the hero */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ensure the hero can wrap on narrow screens so the right card can be hidden/stacked */
+        .hero-section-box { flex-wrap: wrap; }
+
+        .badge-card {
+            width: 360px;
+            height: 360px;
+            background: linear-gradient(180deg,#0867ff 0%,#0052c7 100%);
+            border-radius: 36px; /* similar large radius seen in the example */
+            box-shadow: 0 20px 40px rgba(3,40,78,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Small decorative element inside the badge (optional) */
+        .badge-card .badge-inner {
+            width: 84%;
+            height: 84%;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* Camera/video inside the badge */
+        .badge-card { cursor: pointer; }
+        .badge-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 28px;
+        }
+
+        .camera-msg {
+            position: absolute;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .badge-wrapper { position: relative; display: inline-flex; }
+
+        .badge-card.recording { box-shadow: 0 28px 56px rgba(3,40,78,0.22); }
+
+        /* Page container to centralise content and leave whitespace on the right */
+        .page {
+            width: 1200px;
+            max-width: calc(100% - 48px);
+            padding: 48px 0;
+        }
+
+        /* Hero box styled to match screenshot */
+        .hero-section-box {
+            background-color: #ecfbec; /* same pale green so it blends with page */
+            border-radius: 12px;
+            padding: 48px 60px;
+            margin-top: 20px;
+            width: 100%;
+            height: 650px; /* increased height per your change */
+            display: flex;
+            align-items: center; /* vertically center the hero content */
+            justify-content: flex-start; /* keep content starting from the left */
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            transition: box-shadow 220ms ease, transform 220ms ease;
+        }
+
+        /* Hover effect for the hero box */
+        .hero-section-box:hover {
+            box-shadow: 0 20px 40px rgba(3, 40, 78, 0.16);
+            transform: translateY(-6px);
+        }
+
+        /* Left column content inside the hero */
+        .hero-left {
+            max-width: 640px;
+            text-align: left;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            line-height: 1.05;
+            margin: 0 0 28px 0;
+            color: #07263d;
+            font-weight: 700;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+
+        .btn-primary {
+            background: linear-gradient(180deg,#0b69ff 0%,#0067e6 100%);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 8px 18px rgba(3,40,78,0.2);
+            transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 36px rgba(3,40,78,0.22);
+        }
+
+        /* Results UI */
+        .results {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 640px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(7,38,61,0.04);
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .result-item img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+        .result-item .emotion { font-weight: 700; color: #07263d; }
+
+        /* Bottom marquee */
+        #footerMarquee {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            color: #374151;
+            padding: 10px 0;
+            z-index: 60;
+            overflow: hidden;
+        }
+
+        #footerMarquee .marquee {
+            display: inline-block;
+            white-space: nowrap;
+            will-change: transform;
+            animation: marquee 18s linear infinite;
+            padding-left: 100%;
+        }
+
+        @keyframes marquee {
+            from { transform: translateX(0%); }
+            to { transform: translateX(-100%); }
+        }
+
+        /* Make sure it looks good on small screens */
+        @media (max-width: 760px) {
+            /* Stack the hero into a single column on small screens */
+            .hero-section-box { padding: 28px; height: auto; flex-direction: column; align-items: center; }
+
+            /* Make left column full width and center its content for mobile */
+            .hero-left { max-width: 100%; text-align: center; }
+            .hero-title { font-size: 28px; }
+
+            /* Stack form controls and make the button full width but with sensible max */
+            .form-row { flex-direction: column; align-items: center; width: 100%; }
+            .btn-primary { width: 100%; max-width: 360px; }
+
+            /* Make the badge visible and stack below the text */
+            .hero-right { display: flex !important; margin-left: 0; margin-top: 20px; }
+            .badge-card { width: 300px; height: 300px; border-radius: 28px; }
+            .badge-card .badge-inner { width: 86%; height: 86%; border-radius: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="hero-section-box">
+            <div class="hero-left">
+                <h1 class="hero-title">Check your emotion</h1>
+
+                <div class="form-row">
+                    <button class="btn-primary">Check now</button>
+                </div>
+                <div id="analysisResults" class="results" aria-live="polite"></div>
+            </div>
+
+            <div class="hero-right">
+                <div class="badge-wrapper" aria-hidden="true">
+                    <div class="badge-card" id="badgeCard">
+                        <div class="badge-inner">
+                            <!-- video will be inserted here when permission granted -->
+                            <video id="faceVideo" autoplay playsinline muted></video>
+                        </div>
+                        <div id="cameraMsg" class="camera-msg">Tap to allow camera</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const badgeCard = document.getElementById('badgeCard');
+            const faceVideo = document.getElementById('faceVideo');
+            const cameraMsg = document.getElementById('cameraMsg');
+            const checkBtn = document.querySelector('.btn-primary');
+            let stream = null;
+
+            async function startCamera() {
+                try {
+                    cameraMsg.textContent = 'Requesting camera...';
+                    // prefer front-facing camera
+                    const constraints = { video: { facingMode: 'user' }, audio: false };
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    faceVideo.srcObject = stream;
+                    await faceVideo.play();
+                    badgeCard.classList.add('recording');
+                    cameraMsg.style.display = 'none';
+                } catch (err) {
+                    console.error('Camera error', err);
+                    cameraMsg.style.display = 'block';
+                    if (err && err.name === 'NotAllowedError') {
+                        cameraMsg.textContent = 'Camera permission denied';
+                    } else if (err && err.name === 'NotFoundError') {
+                        cameraMsg.textContent = 'No camera found';
+                    } else {
+                        cameraMsg.textContent = 'Unable to access camera';
+                    }
+                    throw err;
+                }
+            }
+
+            function stopCamera() {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
+                }
+                faceVideo.srcObject = null;
+                badgeCard.classList.remove('recording');
+                cameraMsg.style.display = 'block';
+                cameraMsg.textContent = 'Tap to allow camera';
+            }
+
+            // toggle on badge click
+            badgeCard.addEventListener('click', () => {
+                if (!stream) startCamera();
+                else stopCamera();
+            });
+
+            // capture snapshot and send to analysis endpoint
+            async function captureAndSend() {
+                try {
+                    if (!stream) {
+                        await startCamera();
+                        // small pause to let video start
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+
+                    // wait until video has dimensions
+                    if (faceVideo.readyState < 2) {
+                        await new Promise(resolve => {
+                            faceVideo.onloadedmetadata = () => resolve();
+                        });
+                    }
+
+                    const w = faceVideo.videoWidth || 640;
+                    const h = faceVideo.videoHeight || 480;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    // draw the current video frame
+                    ctx.drawImage(faceVideo, 0, 0, w, h);
+
+                    // convert to blob (jpeg for smaller size)
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+                    if (!blob) throw new Error('Failed to capture image');
+
+                    const form = new FormData();
+                    form.append('image', blob, `capture_${Date.now()}.jpg`);
+
+                    // UI: show analyzing status
+                    const resultsContainer = document.getElementById('analysisResults');
+                    resultsContainer.innerHTML = '<div class="result-item">Analyzing...</div>';
+
+                    const resp = await fetch('http://localhost:5000/analyze', {
+                        method: 'POST',
+                        body: form
+                    });
+
+                    if (!resp.ok) {
+                        const errBody = await resp.json().catch(() => ({}));
+                        throw new Error(errBody.error || `Server responded ${resp.status}`);
+                    }
+
+                    const data = await resp.json();
+                    // expected { results: [ { emotion: '...', face_image: 'base64...' }, ... ] }
+                    resultsContainer.innerHTML = '';
+                    if (!data || !Array.isArray(data.results) || data.results.length === 0) {
+                        resultsContainer.innerHTML = '<div class="result-item">No faces detected</div>';
+                        return;
+                    }
+
+                    data.results.forEach((r, i) => {
+                        const item = document.createElement('div');
+                        item.className = 'result-item';
+
+                        const img = document.createElement('img');
+                        // face_image is base64-encoded JPEG
+                        img.src = r.face_image ? `data:image/jpeg;base64,${r.face_image}` : '';
+
+                        const txt = document.createElement('div');
+                        txt.innerHTML = `<div class="emotion">${r.emotion || 'unknown'}</div>`;
+
+                        item.appendChild(img);
+                        item.appendChild(txt);
+                        resultsContainer.appendChild(item);
+                    });
+                } catch (err) {
+                    console.error('Send failed', err);
+                    const resultsContainer = document.getElementById('analysisResults');
+                    resultsContainer.innerHTML = `<div class="result-item">Error: ${err.message}</div>`;
+                }
+            }
+
+            checkBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                captureAndSend();
+            });
+
+            // stop camera on unload
+            window.addEventListener('pagehide', stopCamera);
+            window.addEventListener('beforeunload', stopCamera);
+        })();
+    </script>
+    <footer id="footerMarquee" role="contentinfo" aria-hidden="false">
+        <div class="marquee">Abraham Adelodun • Computer Science • 23CG034020</div>
+    </footer>
+</body>
+</html>

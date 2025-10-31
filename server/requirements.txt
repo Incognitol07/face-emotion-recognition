@@ -1,0 +1,5 @@
+emotiefflib>=1.1.1
+facenet-pytorch>=2.5.3
+flask>=3.1.2
+flask-cors>=6.0.1
+matplotlib>=3.10.7
