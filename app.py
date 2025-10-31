@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from model_train import process_image
+from model import process_image
 import logging
 import os
 import base64
