@@ -1,18 +1,22 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from model import process_image
 import logging
 import os
 import base64
 from io import BytesIO
-from flask_cors import CORS
 
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
-CORS(app)
 
 # Ensure uploads directory exists
 os.makedirs("uploads", exist_ok=True)
+
+
+@app.route("/", methods=["GET"])
+def index():
+    """Serve the single-page client UI (rendered from templates/index.html)."""
+    return render_template("index.html")
 
 
 @app.route("/analyze", methods=["POST"])
