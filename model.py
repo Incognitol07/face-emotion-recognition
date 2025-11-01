@@ -1,7 +1,6 @@
 from typing import List, Tuple
 import numpy as np
 
-import cv2
 from facenet_pytorch import MTCNN
 from emotiefflib.facial_analysis import EmotiEffLibRecognizer, get_model_list
 from PIL import Image
@@ -12,31 +11,20 @@ logging.basicConfig(level=logging.INFO)
 
 def recognize_faces(frame: np.ndarray, device: str) -> List[np.ndarray]:
     """
-    Detects faces in the given image and returns the facial images cropped from the original.
-
-    This function reads an image from the specified path, detects faces using the MTCNN
-    face detection model, and returns a list of cropped face images.
-
-    Args:
-        frame (numpy.ndarray): The image frame in which faces need to be detected.
-        device (str): The device to run the MTCNN face detection model on, e.g., 'cpu' or 'cuda'.
-
-    Returns:
-        list: A list of numpy arrays, representing a cropped face image from the original image.
-
-    Example:
-        faces = recognize_faces('image.jpg', 'cuda')
-        # faces contains the cropped face images detected in 'image.jpg'.
+    Detects faces in the given image (numpy RGB) and returns cropped face images.
     """
-
     def detect_face(frame: np.ndarray):
         mtcnn = MTCNN(
             keep_all=False, post_process=False, min_face_size=40, device=device
         )
         bounding_boxes, probs = mtcnn.detect(frame, landmarks=False)
-        if probs[0] is None:
+        if probs is None or len(probs) == 0:
             return []
-        bounding_boxes = bounding_boxes[probs > 0.9]
+        # filter boxes by probability threshold
+        valid = probs > 0.9
+        if not np.any(valid):
+            return []
+        bounding_boxes = bounding_boxes[valid]
         return bounding_boxes
 
     bounding_boxes = detect_face(frame)
@@ -45,6 +33,10 @@ def recognize_faces(frame: np.ndarray, device: str) -> List[np.ndarray]:
     for bbox in bounding_boxes:
         box = bbox.astype(int)
         x1, y1, x2, y2 = box[0:4]
+        # ensure coords are within image
+        h, w = frame.shape[:2]
+        x1, x2 = np.clip([x1, x2], 0, w)
+        y1, y2 = np.clip([y1, y2], 0, h)
         facial_images.append(frame[y1:y2, x1:x2, :])
     return facial_images
 
@@ -55,17 +47,11 @@ def process_image(
     """
     Processes an input image to detect faces and predict their emotions.
 
-    Args:
-        image_path (str): Path to the input image file.
-        device (str): Device to run the models on ('cpu' or 'cuda').
-
-    Returns:
-        List[Tuple[Image.Image, str]]: List of tuples, each containing a face image (PIL Image) and its predicted emotion (str).
+    Loads the image using Pillow (no OpenCV), converts to RGB numpy array, then runs detection + emotion model.
     """
-    frame_bgr = cv2.imread(image_path)
-    if frame_bgr is None:
-        raise ValueError(f"Could not load image from {image_path}")
-    frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    # load image with PIL and convert to RGB
+    pil_img = Image.open(image_path).convert("RGB")
+    frame = np.array(pil_img)
 
     facial_images = recognize_faces(frame, device)
 
@@ -80,4 +66,3 @@ def process_image(
         logging.info("Predicted emotion: %s", emotion[0])
 
     return results
-
