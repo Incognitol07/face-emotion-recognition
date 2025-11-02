@@ -1,5 +1,5 @@
-# Use Python 3.12 slim image
-FROM python:3.12-slim
+# Use Python 3.12 slim image based on Debian bookworm
+FROM python:3.12-slim-bookworm
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
