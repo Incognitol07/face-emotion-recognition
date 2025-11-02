@@ -47,4 +47,4 @@ USER appuser
 EXPOSE 8000
 
 # Run the application
-CMD ["uv", "run", "python", "app.py"]
+CMD ["uv", "run", "gunicorn", "app:app", "--bind", "0.0.0.0:8000"]
