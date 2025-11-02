@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_PREFERENCE=only-system \
+    UV_PYTHON=/usr/local/bin/python3 \
     UV_PROJECT_ENVIRONMENT=/app/.venv 
 
 # Set work directory
