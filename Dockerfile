@@ -1,12 +1,10 @@
-# Use Python 3.13 slim image
-FROM python:3.13-slim
+# Use Python 3.12 slim image
+FROM python:3.12-slim
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    UV_PYTHON_PREFERENCE=only-system \
-    UV_PROJECT_ENVIRONMENT=/app/.venv 
+    DEBIAN_FRONTEND=noninteractive 
 
 # Set work directory
 WORKDIR /app
