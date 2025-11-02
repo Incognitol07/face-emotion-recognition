@@ -6,7 +6,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_PREFERENCE=only-system \
-    UV_PYTHON=/usr/local/bin/python3 \
     UV_PROJECT_ENVIRONMENT=/app/.venv 
 
 # Set work directory
@@ -22,7 +21,6 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libgstreamer1.0-0 \
     libgstreamer-plugins-base1.0-0 \
-    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
