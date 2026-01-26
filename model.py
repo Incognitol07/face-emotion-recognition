@@ -1,14 +1,23 @@
 from typing import List, Tuple
 import numpy as np
+import os
 
 import cv2
-from facenet_pytorch import MTCNN
-from emotiefflib.facial_analysis import EmotiEffLibRecognizer, get_model_list
+# from facenet_pytorch import MTCNN
 from PIL import Image
+from tensorflow import keras
 
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+# Load the emotion recognition model
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.h5")
+emotion_model = keras.models.load_model(MODEL_PATH)
+
+# Emotion labels (adjust based on your model's training)
+EMOTION_LABELS = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
+
 
 def recognize_faces(frame: np.ndarray, device: str) -> List[np.ndarray]:
     """
@@ -49,6 +58,37 @@ def recognize_faces(frame: np.ndarray, device: str) -> List[np.ndarray]:
     return facial_images
 
 
+def predict_emotion(face_img: np.ndarray) -> str:
+    """
+    Predicts the emotion from a face image using the loaded Keras model.
+
+    Args:
+        face_img (np.ndarray): The face image as a numpy array (RGB format).
+
+    Returns:
+        str: The predicted emotion label.
+    """
+    # Preprocess the face image for the model
+    # Convert to grayscale if model expects grayscale
+    face_gray = cv2.cvtColor(face_img, cv2.COLOR_RGB2GRAY)
+
+    # Resize to the expected input size (typically 48x48 for emotion recognition models)
+    face_resized = cv2.resize(face_gray, (48, 48))
+
+    # Normalize pixel values
+    face_normalized = face_resized / 255.0
+
+    # Reshape for model input (batch_size, height, width, channels)
+    face_input = np.expand_dims(face_normalized, axis=0)
+    face_input = np.expand_dims(face_input, axis=-1)
+
+    # Predict emotion
+    predictions = emotion_model.predict(face_input, verbose=0)
+    emotion_idx = np.argmax(predictions[0])
+
+    return EMOTION_LABELS[emotion_idx]
+
+
 def process_image(
     image_path: str, device: str = "cpu"
 ) -> List[Tuple[Image.Image, str]]:
@@ -69,14 +109,11 @@ def process_image(
 
     facial_images = recognize_faces(frame, device)
 
-    model_name = get_model_list()[0]
-    fer = EmotiEffLibRecognizer(engine="onnx", model_name=model_name, device=device)
-
     logging.info("Starting emotion recognition for %d faces", len(facial_images))
     results = []
     for face_img in facial_images:
-        emotion, _ = fer.predict_emotions(face_img, logits=True)
-        results.append((Image.fromarray(face_img), emotion[0]))
-        logging.info("Predicted emotion: %s", emotion[0])
+        emotion = predict_emotion(face_img)
+        results.append((Image.fromarray(face_img), emotion))
+        logging.info("Predicted emotion: %s", emotion)
 
     return results
